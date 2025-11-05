@@ -1,0 +1,111 @@
+Write a database trigger on the library.The system should keep track of records that are updated or deleted.The old values of the updated or deleted record should be added in library audit table. Library table(B_id,Title,Edition,no_of_copies) Library_audit table(B_id,Title,Edition,no_of_copies,date_of_mod,type_of_operation,user who performed the operation) Transaction table(Transaction id,Book id,Issue or rerurn,no of copies issued or return)
+CREATE DATABASE library_db;
+USE library_db;
+CREATE TABLE library (
+  B_id INT PRIMARY KEY,
+  Title VARCHAR(50),
+  Authors VARCHAR(50),
+  Edition INT,
+  no_of_c INT
+);
+
+CREATE TABLE library_audit (
+  B_id INT,
+  Title VARCHAR(50),
+  Authors VARCHAR(50),
+  Edition INT,
+  no_of_c INT,
+  date_of_mod DATE,
+  type_of_op VARCHAR(15),
+  username VARCHAR(50)
+);
+
+CREATE TABLE transaction (
+  Trans_id INT PRIMARY KEY,
+  B_id INT,
+I_R CHAR(1),
+no_of_c INT,
+  FOREIGN KEY (B_id) REFERENCES library(B_id)
+);
+INSERT INTO library VALUES
+(1, 'TOC', 'V.v Richard', 2, 4),
+(2, 'CN', 'Forouzan', 4, 5),
+(3, 'ISEE', 'Rahul De', 3, 5),
+(4, 'DBMS', 'Silberschatz', 3, 2),
+(5, 'SEPM', 'Pressman', 5, 6);
+
+SELECT * FROM library;
+DELIMITER $$
+
+CREATE TRIGGER trg_library_update
+AFTER UPDATE ON library
+FOR EACH ROW
+BEGIN
+  DECLARE operation VARCHAR(10);
+  SET operation = 'updated';
+  INSERT INTO library_audit
+  VALUES (OLD.B_id, OLD.Title, OLD.Authors, OLD.Edition, OLD.no_of_c, CURDATE(), operation, CURRENT_USER());
+END $$
+
+DELIMITER ;
+DELIMITER $$
+
+CREATE TRIGGER trg_library_delete
+AFTER DELETE ON library
+FOR EACH ROW
+BEGIN
+  DECLARE operation VARCHAR(10);
+  SET operation = 'deleted';
+  INSERT INTO library_audit
+  VALUES (OLD.B_id, OLD.Title, OLD.Authors, OLD.Edition, OLD.no_of_c, CURDATE(), operation, CURRENT_USER());
+END $$
+
+DELIMITER ;
+UPDATE library SET Authors = 'Kapil Mishra' WHERE B_id = 1;
+DELETE FROM library WHERE B_id = 3;
+
+SELECT * FROM library_audit;
+DELIMITER $$
+
+CREATE TRIGGER trg_transaction_before_insert
+BEFORE INSERT ON transaction
+FOR EACH ROW
+BEGIN
+  DECLARE available INT;
+  IF NEW.I_R = 'I' THEN
+    SELECT no_of_c INTO available FROM library WHERE B_id = NEW.B_id;
+    IF NEW.no_of_c > available THEN
+      SET NEW.no_of_c = available;  -- limit issue to available copies
+    END IF;
+  END IF;
+END $$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER trg_transaction_after_insert
+AFTER INSERT ON transaction
+FOR EACH ROW
+BEGIN
+  IF NEW.I_R = 'I' THEN
+    UPDATE library
+      SET no_of_c = no_of_c - NEW.no_of_c
+    WHERE B_id = NEW.B_id;
+  ELSEIF NEW.I_R = 'R' THEN
+    UPDATE library
+      SET no_of_c = no_of_c + NEW.no_of_c
+    WHERE B_id = NEW.B_id;
+  END IF;
+END $$
+
+DELIMITER ;
+
+INSERT INTO transaction VALUES (10, 2, 'I', 7);
+INSERT INTO transaction VALUES (11, 1, 'I', 3);
+SELECT * FROM library;
+SELECT * FROM transaction;
+INSERT INTO transaction VALUES (12, 2, 'R', 3);
+SELECT * FROM library;
+SELECT * FROM library_audit;
+SELECT * FROM transaction;

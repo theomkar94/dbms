@@ -1,0 +1,17 @@
+1: db.orders.insertMany([ {_id: 1, cust_id: "Ant O. Knee", ord_date: new Date("2020-03-01"), price: 25, items: [ { sku: "oranges", qty: 5, price: 2.5}, { sku: "apples", qty: 5, price: 2.5 } ], status: "P" }, {_id: 2, cust_id: "Ant O. Knee", ord_date: new Date("2020-03-08"), price: 70, items: [ { sku: "oranges", qty: 8, price: 2.5}, { sku: "chocolates", qty: 5, price: 10 } ], status: "D"}, {_id: 3, cust_id: "John Doe", ord_date: new Date("2020-03-15"), price: 50, items: [ { sku: "bananas", qty: 10, prprice: 1}, {sku: "grapes", qty: 5, price: 5 } ], status: "P" }, {_id: 4, cust_id: "John Doe", ord_date: new Date("2020-03-22"), price: 100, items: [ { sku: "mangoes", qty: 10, pprice: 10 } ], status: "D" }, {_id: 5, cust_id: "Rohit", ord_date: new Date("2020-03-30"), price: 45, items: [ { sku: "kiwis", qty: 5, price: 9 }, { sku: "strawberries", qty: 5, price: 5 } ], status: "P" } ])
+2: var map1 = function(){emit(this.cust, this.price)}
+3: var reducel = function(keyCustId, values Prices) {return Array.sum(valuesPrices)}
+4: db.orders.mapReduce(map1, reducel, {out:"Total_Price_per_Cust"})
+5: db.orders.aggregate([{$group: {_id:"$cust_id",totalPrice: {$sum:"$price"}}}])
+6: var map2 = function() {if (this.status ="D") {emit(this.cust_id, this.price)}}
+7: var reduce2 = function(keyCustId, valuesPrices) {return Array.sum(values Prices)}
+8: db.orders.mapReduce(map2, reduce2, {out: "total_price_per_customer_D"})
+9: db.orders.aggregate([{$match: {status: "D"}}, {$group: {_id:"$cust_id", totalPrice: {$sum:"$price"}}}])
+10: var map3 = function() {if (this.status "P") {emit(this.status, this.price)}}
+11: var reduce3 = function(keyStatus, values Prices) {return Array.sum(values Prices)}
+12: db.orders.mapReduce(mapFunction3, reduceFunction3, {out: "total_price_status_P" })
+13: db.orders.aggregate([{$match: {status:"P"}}, {$group: {_id:"$status", totalPrice: {$sum:"$price"}}}])
+14: var map4 = function() {for (var key in this) {emit(key, 1)}}
+15: var reduce4 = function(key, values) {return Array.sum(values)}
+16: db.orders.mapReduce(map4, reduce4, {out:"keys_count"})
+17: db.orders.aggregate([{$project: {fields: {$objectToArray:"$$ROOT"}}}, {$unwind: "$fields"}, {$group: {_id:"$fields.k", count: {$sum:1}}}])

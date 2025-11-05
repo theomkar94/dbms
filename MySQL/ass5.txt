@@ -1,0 +1,71 @@
+Write a PL/SQL block to create a cursor to copy contents of one table into another. Avoid redundancy. Cursors: (All types: Implicit, Explicit, Cursor FOR Loop, Parameterized Cursor) Write a PL/SQL block of code using parameterized Cursor, that will merge the data available in the newly created table N_RollCall with the data available in the table O_RollCall. If the data in the first table already exists in the second table then that data should be skipped.
+
+CREATE DATABASE student_grades_db;
+USE student_grades_db;
+CREATE TABLE studmarks (
+  Name       VARCHAR(20) NOT NULL,
+  TotalMarks INT         NOT NULL,
+PRIMARY KEY (Name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE result (
+  Roll_No  TINYINT      NOT NULL,
+  Name     VARCHAR(20)  NOT NULL,
+  Class    VARCHAR(25)  NOT NULL,
+  PRIMARY KEY (Roll_No),
+  INDEX ix_result_class (Class)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DELIMITER $$
+CREATE PROCEDURE proc_grade(
+  IN p_rollno TINYINT,
+  IN p_name   VARCHAR(20),
+  IN p_marks  INT
+)
+BEGIN
+  DECLARE v_class VARCHAR(25);
+IF p_marks IS NULL OR p_marks < 0 OR p_marks > 1500 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Marks must be between 0 and 1500';
+  END IF;
+IF p_marks >= 990 AND p_marks <= 1500 THEN
+    SET v_class = 'Distinction';
+  ELSEIF p_marks <= 989 AND p_marks >= 900 THEN
+    SET v_class = 'First Class';
+  ELSEIF p_marks <= 899 AND p_marks >= 825 THEN
+    SET v_class = 'Second Class';
+  ELSEIF p_marks <= 824 AND p_marks >= 700 THEN
+    SET v_class = 'Pass';
+  ELSE
+    SET v_class = 'Fail';
+  END IF;
+INSERT INTO studmarks (Name, TotalMarks) VALUES (p_name, p_marks)
+    ON DUPLICATE KEY UPDATE TotalMarks = VALUES(TotalMarks);
+
+  INSERT INTO result (Roll_No, Name, Class) VALUES (p_rollno, p_name, v_class)
+    ON DUPLICATE KEY UPDATE Name = VALUES(Name), Class = VALUES(Class);
+END $$
+DELIMITER ;
+CALL proc_grade(1, 'Aryan', 850);
+CALL proc_grade(2, 'Peter', 1000);
+CALL proc_grade(3, 'Smith', 834);
+CALL proc_grade(4, 'Carol', 750);
+CALL proc_grade(5, 'Bob', 950);
+CALL proc_grade(6, 'Sam', 650);
+DELIMITER $$
+DROP FUNCTION IF EXISTS tot_stud $$
+CREATE FUNCTION tot_stud(p_classname VARCHAR(25))
+RETURNS INT
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+  DECLARE total INT;
+  SELECT COUNT(*) INTO total
+  FROM result
+  WHERE Class = p_classname;
+  RETURN total;
+END $$
+DELIMITER ;
+SELECT * FROM result ORDER BY Roll_No;
+SELECT * FROM studmarks ORDER BY Name;
+SELECT tot_stud('Second Class') AS Second_Class_Students;
+SELECT tot_stud('Pass')         AS Pass_Students;
+SELECT tot_stud('Distinction')  AS Distinction_Students;
+SELECT tot_stud('Fail')         AS Fail_Students;

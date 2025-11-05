@@ -1,0 +1,20 @@
+1.Create a medical database having following tables: Patient table(patient_id,patient_name,Date of Admit,Age,City) Doctor table(doc_id,doc_name,qualification,experience,dept,city,salary) Treats table(doc_id,patient_id,disease) (use on delete cascade )
+2. Display all the patient names between age group 18 to 50. select pat_name from Patient where age between 18 and 50;
+3. Display the list of all doctors who are MD. select doc_name from Doctor where qualification="MD";
+4. Display the list of all doctors whose experience>20 years. select doc_name from Doctor where experience>20;
+5. Display patient names suffering from cancer. select pat_name from Patient,Treats where Treats.disease="Cancer" and Treats.pat_id=Patient.pat_id;
+6. Display the patient name & doctor name who is treating the cancer patient. select pat_name,doc_name from Patient as p,Doctor as d,Treats as t where disease="Cancer" and d.doc_id=t.doc_id and p.pat_id=t.pat_id;
+7. Display the patient names whose name starts with letter 'a',end with 'a',having a name having exactly 5 letters. select pat_name from Patient where pat_name like "a%";
+8. Remove all the records of patient with patient_id=p10. delete from Patient where pat_id="p10";
+9. Remove all the records of doctor Suhas. select * from Treats;
+10. Change the qualification of doctor Shubham from MBBS to MD. update Doctor set qualification="MD" where doc_name="Shubham";
+11. Give 5% salary rates to the dentist and 10% raise to cardiologist (in single query). update Doctor set salary=case when dept="Dental" then salary+salary*(0.05) when dept="Cardiology" then salary+salary*(0.1) else salary*1 end;
+12. Display dept wise total salary of doctors. select dept,sum(salary) from Doctor group by dept;
+13. Find the dept that have the highest avg salary. select dept,avg(salary) from Doctor group by dept having avg(salary)>=all(select avg(salary) from Doctor group by dept);
+14. Find the avg salary of the doctors in dentist dept. select avg(salary) from Doctor where dept="Dental";
+15. Find the dept where avg salary of the instructor is more than 50,000. select dept from Doctor group by dept having avg(salary)>50000;
+16. Find how many doctors work in hospital. select count(*) from Doctor;
+17. Find out how many doctors actually treated a patient. select count(distinct doc_id) from Treats;
+18. List the cities in which either doctor or patient lives. select city from Doctor union select city from Patient;
+19. List the cities in which both the patient & the doctor lives. select d.city from Doctor as d,Patient as p where d.city=p.city;
+20. Find out the doctors who have not treated any patient. select doc_name,doc_id from Doctor where doc_id not in(select distinct doc_id from Treats);

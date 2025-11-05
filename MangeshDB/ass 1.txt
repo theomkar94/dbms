@@ -1,0 +1,18 @@
+1: use B1
+2: db.createCollection("articles")
+3: db.articles.insertMany([ { "Title": "C", "Content": "Procedural language", "Author": "Yashwant Kanetkar", "Author_age": 25, "DOP": ISODate("2016-05-13T00:00:00Z"), "Category": "IT", "Comment": [ {"Name": "Sandesh", "Remarks": "Very Good" }, {"Name": "Ravi", "Remarks": "Nice" } ] }, { "Title": "Python", "Content": "Interpreted language", "Author": "Sharma", "Author age": 60, "DOP": ISODate("2020-01-01T00:00:00Z"), "Category": "Programming", "Comment": [ {"Name": "Aryan", "Remarks": "Excellent" } ] }, { "Title": "Java", "Content": "Object-Oriented Programming", "Author": "James Gosling", "Author_age": 16, "DOP": ISODate("2019-11-15T00:00:00Z"), "Category": "IT", "Comment": [ {"Name": "Isha", "Remarks": "Very Informative" } ] }, { "Title": "JavaScript", "Content": "Scripting language for Web", "Author": "Brendan Eich", "Author age": 50, "DOP": ISODate("2018-03-25T00:00:00Z"), "Category": "Web Development", "Comment": [ {"Name": "Aditya", "Remarks": "Great" } ] }, { "Title": "HTML", "Content": "Markup language for Web", "Author": "Tim Berners-Lee", "Author_age": 64, "DOP": ISODate("1993-06-01T00:00:00Z"), "Category": "Web Development", "Comment": [ {"Name": "Swapnil", "Remarks": "Good Introduction" } ] } ])
+4: db.articles.findOne()
+5: db.articles.find( {"Author":"Sharma"})
+6: db.articles.updateOne({"Author":"Sharma", "Comment.Name":"Aryan"}, {set: {"Comment..Remarks":"Good"}})
+7: db.articles.save({ "Title": "Ruby", "Content": "Dynamic, open-source programming language", "Author": "Yukihiro Matsumoto", "Author age": 55, "DOP": ISODate("2021-07-18T00:00:00Z"), "Category": "Programming", "Comment": [ {"Name": "Mugdha", "Remarks": "Impressive" } ] })
+8: db.articles.save({ "_id": ObjectId('6717de2e29f2a265d586b020'), "Title": "Go", "Content": "Compiled programming language", "Author": "Robert Griesemer", "Author_age": 58, "DOP": ISODate("2022-03-10T00:00:00Z"), "Category": "Programming", "Comment": [ {"Name": "Aryan", "Remarks": "Great Performance" } ] })
+9: db.articles.find().pretty()
+10: let article = db.articles.findOne({ "Title": "HTML" });
+11: article.Content=" Updated content for HTML ";
+12: db.articles.save(article);
+13: db.articles.updateOne({"Author":"Sharma"}, {$push: {Comment: {"Name":"Rohit", "Comment":"Niceee"}}})
+14: db.articles.deleteOne({"Author_age": {$lt:18}})
+15: db.articles.find().pretty()
+16: db.articles.remove({})
+17: db.articles.findOne()
+18: db.articles.drop()

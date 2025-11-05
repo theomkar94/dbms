@@ -1,0 +1,25 @@
+1: use AssignB2
+2: db.orders.insertMany([ { "Order id": 1, "Cust id": "Al", "Cust name": "Rohit", "Phone_no": [9890151243, 8806048721], "Email_id": "rohit@gmail.com", "Item_name": "Laptop", "DtOfOrder": ISODate("2022-10-12T00:00:00Z"), "Qty": 1, "Amt": 90000, "Status": "D" }, { "Order id": 2, "Cust_id": "A2", "Cust_name": "Aryan", "Phone_no": [9876543210], "Email_id": "aryan@gmail.com", "Item name": "Mobile", "DtOfOrder": ISODate("2022-11-15T00:00:00Z"), "Qty": 1, "Amt": 50000, "Status": "P" }, { "Order id": 3, "Cust id": "A3", "Cust_name": "Isha", "Phone_no": [9812345678, 9823456789], "Email_id": "isha@gmail.com", "Item name": "Tablet", "DtOfOrder": ISODate("2022-12-01T00:00:00Z"), "Qty": 1, "Amt": 30000, "Status": "D" }, { "Order_id": 4, "Cust id": "A4", "Cust_name": "Aditya", "Phone_no": [9865432109], "Email id": null, "Item_name": "Headphones", "DtOfOrder": ISODate("2023-01-20T00:00:00Z"), "Qty": 2, "Amt": 4000, "Status": "P" }, { "Order id": 5, "Cust_id": "A5", "Cust_name": "Swapnil", "Phone_no": [9898765432, 9887654321], "Email_id": "swapnil@gmail.com", "Item name": "Monitor", "DtOfOrder": ISODate("2023-02-14T00:00:00Z"), "Qty": 1, "Amt": 15000, "Status": "D" }, { "Order id": 6, "Cust_id": "A6", "Cust_name": "Mugdha", "Phone_no": [9812365478], "Email id": null, "Item_name": "Keyboard", "DtOfOrder": ISODate("2023-03-05T00:00:00Z"), "Qty": 3, "Amt": 12000, "Status": "P" } ])
+3: db.orders.createIndex({ "Cust_id": 1 });
+4: db.orders.createIndex({ "Item_name": 1 });
+5: db.orders.insertOne({ "Order id":7, "Cust id":"A1", "Cust name":"Rohit", "Phone_no":[9890151243], "Email_id":"rohit2@gmail.com", "Item_name":"Laptop", "DtOfOrder": ISODate("2023-05-01T00:00:00Z"), "Qty":1, "Amt":90000, "Status":"p" });
+6: db.orders.createIndex({ "Order_id": 1 }, { unique: true });
+7: db.orders.insertOne({ "Order id": 1, "Cust id": "A7", "Cust name": "Nikhil", "Phone_no": [9899999999], "Email_id": "nikhil@gmail.com", "Item name": "Mouse", "DtOfOrder": ISODate("2023-06-10T00:00:00Z"), "Qty": 2, "Amt": 2000, "Status": "D" });
+8: db.orders.createIndex({ "Phone_no": 1 });
+9: db.orders.find({ "Phone_no": { $size: 2 } }).pretty();
+10: db.orders.find( {"Email_id": { $exists: true } }).explain("executionStats");
+11: db.orders.createIndex({ "Email_id": 1 }, { sparse: true });
+12: db.orders.find( {"Email_id": { $exists: true } }).explain("executionStats");
+13: db.orders.getIndexes();
+14: db.orders.totalIndexSize()
+15: db.orders.dropIndexes();
+16: db.orders.countDocuments()
+17: db.orders.countDocuments({"Status":"P"})
+18: db.orders.distinct("Cust_name");
+19: db.orders.find().sort({"Amt":1}).pretty();
+20: db.orders.aggregate([{$group: {_id:"$Cust_id", totalOrders: {$sum:1}}}]).pretty();
+21: db.orders.aggregate([{$match: { "Status": "P" } }, { $group: {_id: "$Cust_id", totalAmount: { $sum: "$Amt" } } }, {$sort: {totalAmount:-1}}]);
+22: db.orders.aggregate([{$match: {"Status":"D"}}, {$group: {_id:"$Cust_id",totalDeliveredAmount: {$sum:"$Amt"}}},{$sort: {_id:1}}]).pretty();
+23: db.orders.aggregate([{$group: {_id:"$Item_name", totalSold: {$sum:"$Qty"}}}, {$sort: {totalSold:-1}}, {$limit:3}]).pretty();
+24: db.orders.aggregate([ {$group: {_id:"$DtOfOrder", totalOrders: {$sum:1}}}, {$sort: {totalOrders:-1}}, {$limit:1} ]).pretty();
+25: db.orders.aggregate([{$group: {_id:"$Cust_id", totalOrders: {$sum:1}}}, {$sort: {totalOrders:-1}}, {$limit:1}]).pretty();
