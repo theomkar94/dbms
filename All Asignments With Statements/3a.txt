@@ -1,0 +1,183 @@
+-- === Part 1: Table Creation ===
+[cite_start]-- As per the problem statement [cite: 1058-1062]
+-- NOTE: Primary Keys are added as they are required for Foreign Keys to work.
+
+CREATE TABLE Branchmaster (
+    branch_id INT PRIMARY KEY,
+    branch_name VARCHAR(50)
+);
+
+CREATE TABLE Empmaster (
+    emp_id INT PRIMARY KEY,
+    emp_name VARCHAR(50),
+    branch_id INT,
+    salary INT,
+    dept VARCHAR(50),
+    manager_id INT,
+    FOREIGN KEY (branch_id) REFERENCES Branchmaster(branch_id),
+    FOREIGN KEY (manager_id) REFERENCES Empmaster(emp_id)
+);
+
+CREATE TABLE contactdetails (
+    emp_id INT,
+    email_id VARCHAR(50),
+    phone_no BIGINT,
+    FOREIGN KEY (emp_id) REFERENCES Empmaster(emp_id) ON DELETE SET NULL
+);
+
+CREATE TABLE Empaddressdetails (
+    emp_id INT,
+    street VARCHAR(50),
+    city VARCHAR(50),
+    state VARCHAR(50),
+    FOREIGN KEY (emp_id) REFERENCES Empmaster(emp_id) ON DELETE CASCADE
+);
+
+CREATE TABLE Branchaddress (
+    branch_id INT,
+    city VARCHAR(50),
+    state VARCHAR(50),
+    FOREIGN KEY (branch_id) REFERENCES Branchmaster(branch_id)
+);
+
+-- === Part 2: Query 1 (Insert Records) ===
+[cite_start]-- Data extracted from 'SELECT' results [cite: 1065-1133]
+-- NOTE: Salary typos like '3120000' are corrected to '120000' based on later queries.
+
+INSERT INTO Branchmaster (branch_id, branch_name) VALUES
+(1, 'Vadgaon'),
+(2, 'Park street'),
+(3, 'Panvel'),
+(4, 'Pimpri'),
+(5, 'Model colony');
+
+[cite_start]-- Original inserts from the first 'select * from Empmaster' [cite: 1082-1098]
+INSERT INTO Empmaster (emp_id, emp_name, branch_id, salary, dept, manager_id) VALUES
+(10, 'Aryan', NULL, 240000, 'Manager', NULL),
+(11, 'Kiran', NULL, 45000, 'Admin', 10),
+(12, 'Carol', NULL, 60000, 'Assistant', 10),
+(13, 'Peter', NULL, 120000, 'Senior', 10), -- Corrected 3120000 to 120000
+(14, 'Bob', NULL, 110000, 'HR', 10);       -- Corrected 5110000 to 110000
+
+INSERT INTO contactdetails (emp_id, email_id, phone_no) VALUES
+(11, 'kiran@gmail.com', 9890154761),
+(10, 'aryan@gmail.com', 8806058754),
+(13, 'peter@hotmail.c', 9373203456);
+
+INSERT INTO Branchaddress (branch_id, city, state) VALUES
+(1, 'Pune', 'Maharashtra'),
+(2, 'Kolkata', 'West Bengal'),
+(3, 'Mumbai', 'Maharashtra'),
+(4, 'Bangalore', 'Karnataka'),
+(5, 'Cuttack', 'Orissa');
+
+INSERT INTO Empaddressdetails (emp_id, street, city, state) VALUES
+(10, 'vadgaon', 'Pune', 'Maharashtra'),
+(11, 'Link Road', 'Mumbai', 'Maharashtra'),
+(12, 'Park stree', 'Kolkata', 'West Bengal'),
+(13, 'Roha', 'Bangalore', 'Karnataka'),
+(14, 'Street roa', 'Cuttack', 'Orissa');
+
+
+-- === Part 3: Data Correction (Implied by Queries) ===
+-- These updates are needed to match the data shown in later queries (Query 2, 8, etc.)
+[cite_start]-- The branch_ids are from Query 2 [cite: 1138-1148]
+[cite_start]-- The salaries are from the `SELECT` query on page 3 [cite: 1205-1213]
+UPDATE Empmaster SET branch_id = 2, salary = 40000 WHERE emp_id = 10;
+UPDATE Empmaster SET branch_id = 4, salary = 20000 WHERE emp_id = 11; [cite_start]-- Salary is 20000 in [cite: 1209]
+UPDATE Empmaster SET branch_id = 1 WHERE emp_id = 12;
+UPDATE Empmaster SET branch_id = 3 WHERE emp_id = 13;
+UPDATE Empmaster SET branch_id = 5, salary = 110000 WHERE emp_id = 14;
+
+
+-- === Part 4: Assignment Queries (Queries 2-16) ===
+
+-- 2. List the employee details along with branch name using the inner join...
+select emp_id, emp_name, branch_name from Empmaster e 
+inner join Branchmaster b on e.branch_id = b.branch_id 
+order by emp_id;
+
+-- 3. List the details of employee who belong to admin department...
+select emp_name, dept, branch_name from Branchmaster b, Empmaster e 
+where b.branch_id = e.branch_id and dept = "Admin";
+
+-- 4. List the employee name along with the phone no and city using inner join.
+select emp_name, phone_no, city from Empmaster e 
+inner join Empaddressdetails a on e.emp_id = a.emp_id 
+inner join contactdetails c on e.emp_id = c.emp_id;
+
+-- 5. List the employee name with the contact details (if any).
+select emp_name, email_id, phone_no from Empmaster e 
+left join contactdetails c on e.emp_id = c.emp_id;
+
+-- 6. List the employee contact details irrespective of whether they are working or have left.
+-- This query deletes employees first to demonstrate the constraints
+delete from Empmaster where emp_id = 12;
+delete from Empmaster where emp_id = 13; [cite_start]-- Corrected typo from PDF [cite: 1196]
+
+-- This query shows contact details for employees who may no longer be in Empmaster
+select emp_name, email_id, phone_no from Empmaster e 
+right join contactdetails c on e.emp_id = c.emp_id;
+
+-- 7. Retrieve the employee name and their respective manager name.
+select e1.emp_name, e2.emp_name as Manager from Empmaster e1, Empmaster e2 
+where e1.manager_id = e2.emp_id;
+
+-- 8. List the employee details along with branch name using natural join.
+select emp_name, dept, branch_name, salary from Branchmaster b 
+natural join Empmaster e;
+
+-- 9. List the employee names who work at the vadgaon branch...
+select e.emp_id, emp_name, city from Empmaster e, Branchmaster b, Empaddressdetails a 
+where b.branch_name = "Vadgaon" and b.branch_id = e.branch_id and e.emp_id = a.emp_id;
+
+-- 10. Find the employee who works at the vadgaon branch with salary>10000...
+select emp_name, street, city, salary from Empmaster e, Empaddressdetails a 
+where e.emp_id = a.emp_id 
+and e.emp_id in (
+    select emp_id from Branchmaster b, Empmaster c 
+    where branch_name = "Vadgaon" and salary > 10000 and b.branch_id = c.branch_id
+);
+
+-- 11. Find the employees who live and work in same city.
+select emp_name from Empmaster e, Branchmaster b, Empaddressdetails a, Branchaddress c 
+where e.emp_id = a.emp_id 
+  and b.branch_id = e.branch_id 
+  and c.branch_id = b.branch_id 
+  and c.city = a.city;
+
+-- 12. Find the employees whose salaries are more than everybody who works at branch vadgaon.
+select emp_name from Empmaster 
+where salary > all (
+    select salary from Empmaster e, Branchmaster b 
+    where e.branch_id = b.branch_id and branch_name = "Vadgaon"
+);
+
+-- 13. Create a view which will contain total employees at each branch.
+create view TotEmp as 
+select branch_name, count(emp_id) as TotalEmployees 
+from Empmaster e, Branchmaster b 
+where e.branch_id = b.branch_id 
+group by e.branch_id;
+
+select * from TotEmp;
+
+-- 14. List the branch names where employee have a salary>100000.
+select branch_name from Empmaster e, Branchmaster b 
+where e.branch_id = b.branch_id and salary > 100000;
+
+-- 15. Create a view which will show the avg salary and the total salary at each branch.
+create view Emp as 
+select branch_name, avg(salary), sum(salary) 
+from Empmaster e, Branchmaster b 
+where e.branch_id = b.branch_id 
+group by e.branch_id;
+
+select * from Emp;
+
+-- 16. Find the employee who do not have a job at vadgaon branch.
+select emp_name from Empmaster e, Branchmaster b 
+where e.branch_id = b.branch_id 
+and e.branch_id not in (
+    select branch_id from Branchmaster where branch_name = "vadgaon"
+);

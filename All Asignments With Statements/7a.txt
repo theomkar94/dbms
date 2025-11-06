@@ -1,0 +1,127 @@
+-- === Part 1: Table Creation ===
+-- (Based on problem description and code)
+CREATE TABLE library (
+    B_id INT,
+    Title VARCHAR(50),
+    Authors VARCHAR(50),
+    Edition INT,
+    no_of_c INT
+);
+
+-- (Using 'lib_audit' as seen in the code)
+CREATE TABLE lib_audit (
+    B_id INT,
+    Title VARCHAR(50),
+    Authors VARCHAR(50),
+    Edition INT,
+    no_of_c INT,
+    date_of_mod DATE,
+    type_of_op VARCHAR(10),
+    username VARCHAR(50)
+);
+
+CREATE TABLE transaction (
+    Trans_id INT,
+    B_id INT,
+    I_R CHAR(1),
+    no_of_c INT
+);
+
+-- === Part 2: Initial Data Insertion ===
+INSERT INTO library (B_id, Title, Authors, Edition, no_of_c) VALUES
+(1, 'TOC', 'V.v Richard', 2, 4),
+(2, 'CN', 'Forouzan', 4, 5),
+(3, 'ISEE', 'Rahul De', 3, 5),
+(4, 'DBMS', 'Silberschatz', 3, 2),
+(5, 'SEPM', 'Pressman', 5, 6);
+
+-- === Part 3: Query 1 (Triggers for Audit Trail) ===
+
+-- Trigger for UPDATE
+DELIMITER $
+CREATE TRIGGER t AFTER UPDATE ON library
+FOR EACH ROW
+BEGIN
+    DECLARE a VARCHAR(10);
+    SET a = 'updated';
+    INSERT INTO lib_audit
+    VALUES(old.B_id, old.Title, old.Authors, old.Edition, old.no_of_c, curdate(), a, current_user());
+END $
+DELIMITER ;
+
+-- Test the UPDATE trigger
+UPDATE library SET Authors = "Kapil-Mishra" WHERE B_id = 1;
+
+-- See the audit log
+SELECT * FROM lib_audit;
+
+-- Trigger for DELETE
+DELIMITER $
+CREATE TRIGGER t1 AFTER DELETE ON library
+FOR EACH ROW
+BEGIN
+    DECLARE b VARCHAR(10);
+    SET b = 'deleted';
+    INSERT INTO lib_audit
+    VALUES(old.B_id, old.Title, old.Authors, old.Edition, old.no_of_c, curdate(), b, current_user());
+END $
+DELIMITER ;
+
+-- Test the DELETE trigger
+DELETE FROM library WHERE B_id = 3;
+
+-- See the audit log again
+SELECT * FROM lib_audit;
+
+-- === Part 4: Query 2 (Trigger to Check Availability) ===
+
+DELIMITER $
+CREATE TRIGGER t2 BEFORE INSERT ON transaction
+FOR EACH ROW
+BEGIN
+    DECLARE no INT;
+    IF new.I_R = "I" THEN
+        SELECT no_of_c INTO no FROM library WHERE B_id = new.B_id;
+        IF new.no_of_c > no THEN
+            SET new.no_of_c = no;
+        END IF;
+    END IF;
+END $
+DELIMITER ;
+
+-- Test the 't2' trigger
+INSERT INTO transaction VALUES (10, 1, "I", 3);
+SELECT * FROM transaction; -- (To verify)
+
+-- === Part 5: Query 3 (Trigger to Update Book Count) ===
+
+-- (Clear the transaction table as shown in the PDF)
+DELETE FROM transaction;
+
+DELIMITER $
+CREATE TRIGGER t3 AFTER INSERT ON transaction
+FOR EACH ROW
+BEGIN
+    IF new.I_R = "I" THEN
+        UPDATE library SET no_of_c = no_of_c - new.no_of_c 
+        WHERE B_id = new.B_id;
+    ELSE
+        UPDATE library SET no_of_c = no_of_c + new.no_of_c 
+        WHERE B_id = new.B_id;
+    END IF;
+END $
+DELIMITER ;
+
+-- Test 't3' trigger (Issue 7, but only 5 are available, so 5 will be issued)
+INSERT INTO transaction VALUES(10, 2, "I", 7);
+SELECT * FROM library;
+
+-- Test 't3' trigger (Issue 3)
+INSERT INTO transaction VALUES (14, 5, "I", 3);
+SELECT * FROM library;
+SELECT * FROM transaction;
+
+-- Test 't3' trigger (Return 3)
+INSERT INTO transaction VALUES (12, 2, "R", 3);
+SELECT * FROM library;
+SELECT * FROM transaction;

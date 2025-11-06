@@ -1,0 +1,148 @@
+// === 1. Setup ===
+//
+use B1
+//
+db.createCollection("articles")
+
+// === 2. Insert Documents ===
+//
+db.articles.insertMany([
+    {
+        "Title": "C",
+        "Content": "Procedural language",
+        "Author": "Yashwant Kanetkar",
+        "Author_age": 25,
+        "DOP": ISODate("2016-05-13T00:00:00Z"),
+        "Category": "IT",
+        "Comment": [
+            {"Name": "Sandesh", "Remarks": "Very Good" },
+            {"Name": "Ravi", "Remarks": "Nice" }
+        ]
+    },
+    {
+        "Title": "Python",
+        "Content": "Interpreted language",
+        "Author": "Sharma",
+        "Author_age": 60,
+        "DOP": ISODate("2020-01-01T00:00:00Z"),
+        "Category": "Programming",
+        "Comment": [
+            {"Name": "Aryan", "Remarks": "Excellent" }
+        ]
+    },
+    {
+        "Title": "Java",
+        "Content": "Object-Oriented Programming",
+        "Author": "James Gosling",
+        "Author_age": 16,
+        "DOP": ISODate("2019-11-15T00:00:00Z"),
+        "Category": "IT",
+        "Comment": [
+            {"Name": "Isha", "Remarks": "Very Informative" }
+        ]
+    },
+    {
+        "Title": "JavaScript",
+        "Content": "Scripting language for Web",
+        "Author": "Brendan Eich",
+        "Author_age": 50,
+        "DOP": ISODate("2018-03-25T00:00:00Z"),
+        "Category": "Web Development",
+        "Comment": [
+            {"Name": "Aditya", "Remarks": "Great" }
+        ]
+    },
+    {
+        "Title": "HTML",
+        "Content": "Markup language for Web",
+        "Author": "Tim Berners-Lee",
+        "Author_age": 64,
+        "DOP": ISODate("1993-06-01T00:00:00Z"),
+        "Category": "Web Development",
+        "Comment": [
+            {"Name": "Swapnil", "Remarks": "Good Introduction" }
+        ]
+    }
+])
+
+// === 3. Read Operations ===
+//
+// Display the first document found in db
+db.articles.findOne()
+
+//
+// Display first document belonging to a certain Author
+db.articles.find( {"Author":"Sharma"})
+
+// === 4. Update Operations ===
+//
+// Modify the comment made by certain person on a certain article
+db.articles.updateOne(
+    {"Author":"Sharma", "Comment.Name":"Aryan"}, 
+    {$set: {"Comment.$.Remarks":"Good"}}
+)
+
+//
+// Insert record with save method (Without Obj_id)
+db.articles.save({
+    "Title": "Ruby",
+    "Content": "Dynamic, open-source programming language",
+    "Author": "Yukihiro Matsumoto",
+    "Author_age": 55,
+    "DOP": ISODate("2021-07-18T00:00:00Z"),
+    "Category": "Programming",
+    "Comment": [
+        {"Name": "Mugdha", "Remarks": "Impressive" }
+    ]
+})
+
+//
+// Insert/Replace record with save method (With Obj_Id)
+// This replaces the 'JavaScript' document (ID ...b020) with 'Go'
+db.articles.save({
+    "_id": ObjectId('6717de2e29f2a265d586b020'),
+    "Title": "Go",
+    "Content": "Compiled programming language",
+    "Author": "Robert Griesemer",
+    "Author_age": 58,
+    "DOP": ISODate("2022-03-10T00:00:00Z"),
+    "Category": "Programming",
+    "Comment": [
+        {"Name": "Aryan", "Remarks": "Great Performance" }
+    ]
+})
+
+//
+// Update collection with save method
+let article = db.articles.findOne({ "Title": "HTML" });
+article.Content = "Updated content for HTML";
+db.articles.save(article);
+
+//
+// Add one more comment for particular title
+db.articles.updateOne(
+    {"Author":"Sharma"}, 
+    {$push: {Comment: {"Name":"Rohit", "Comment":"Niceee"}}}
+)
+
+// === 5. Delete Operations ===
+//
+// Delete the documents whose author age is less than 18
+// (This will delete the "Java" document)
+db.articles.deleteOne({"Author_age": {$lt:18}})
+
+//
+// Show all remaining documents
+db.articles.find().pretty()
+
+//
+// Remove All Documents from a Collection
+db.articles.remove({})
+
+//
+// Verify all documents are gone
+db.articles.findOne()
+
+//
+// Delete the Article collection
+db.articles.drop()

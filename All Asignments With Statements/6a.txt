@@ -1,0 +1,104 @@
+-- This command is needed to see the output from DBMS_OUTPUT.PUT_LINE
+SET SERVEROUTPUT ON;
+
+-- === Part 1: Anonymous Block with Implicit Cursor ===
+
+-- 1. Create the student table
+CREATE TABLE student(
+    roll_no int,
+    name varchar(20), 
+    marks int
+);
+
+-- 2. Insert initial data
+INSERT INTO student VALUES(1, 'abc', 39);
+INSERT INTO student VALUES(2, 'pqr', 35);
+INSERT INTO student VALUES(3, 'xyz', 41);
+INSERT INTO student VALUES(4, 'cde', 37);
+INSERT INTO student VALUES(5, 'lmo', 46);
+
+-- 3. Show initial data
+SELECT * FROM student;
+
+-- 4. First run of the PL/SQL block (updates 3 records)
+BEGIN
+    UPDATE student SET marks = 40 WHERE marks BETWEEN 35 AND 39;
+    IF SQL%notfound THEN
+        dbms_output.put_line('No records were updated');
+    ELSE
+        dbms_output.put_line('Total records updated:' || sql%rowcount);
+    END IF;
+END;
+/
+
+-- 5. Show data after the first update
+SELECT * FROM student;
+
+-- 6. Second run of the PL/SQL block (updates 0 records)
+BEGIN
+    UPDATE student SET marks = 40 WHERE marks BETWEEN 35 AND 39;
+    IF SQL%notfound THEN
+        dbms_output.put_line('No records were updated');
+    ELSE
+        dbms_output.put_line('Total records updated:' || sql%rowcount);
+    END IF;
+END;
+/
+
+-- 7. Third run of the PL/SQL block (updates 4 records)
+BEGIN
+    UPDATE student SET marks = 45 WHERE marks BETWEEN 35 AND 44;
+    IF SQL%notfound THEN
+        dbms_output.put_line('No records were updated');
+    ELSE
+        dbms_output.put_line('Total records updated:' || sql%rowcount);
+    END IF;
+END;
+/
+
+-- 8. Show final data for Part 1
+SELECT * FROM student;
+
+
+-- === Part 2: Explicit & Parameterized Cursors ===
+
+-- 1. Create the newstudent table
+CREATE TABLE newstudent(
+    roll_no int,
+    name varchar(20), 
+    marks int
+);
+
+-- 2. Insert initial data into newstudent
+INSERT INTO newstudent VALUES(1, 'abc', 45);
+INSERT INTO newstudent VALUES(3, 'xyz', 45);
+INSERT INTO newstudent VALUES (7, 'xyzr', 95);
+INSERT INTO newstudent VALUES (8, 'pqrs', 65);
+
+-- 3. PL/SQL block to copy unique records
+DECLARE
+    -- Explicit cursor for the source table
+    CURSOR cur_s IS SELECT * FROM student;
+    
+    -- Parameterized explicit cursor for the destination table
+    CURSOR cur_new(a int) IS SELECT * FROM newstudent WHERE roll_no = a;
+    
+    nrec newstudent%rowtype;
+BEGIN
+    -- Cursor FOR loop
+    FOR srec IN cur_s
+    LOOP
+        OPEN cur_new(srec.roll_no);
+        FETCH cur_new INTO nrec;
+        
+        IF cur_new%notfound THEN
+            INSERT INTO newstudent VALUES(srec.roll_no, srec.name, srec.marks);
+        END IF;
+        
+        CLOSE cur_new;
+    END LOOP;
+END;
+/
+
+-- 4. Show final data in newstudent table
+SELECT * FROM newstudent;

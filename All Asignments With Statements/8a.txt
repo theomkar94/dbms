@@ -1,0 +1,140 @@
+import mysql.connector
+from mysql.connector import Error
+
+def create_connection():
+    """Create a database connection to the MySQL database."""
+    try:
+        connection = mysql.connector.connect(host='localhost',
+                                             database='RohitDb',
+                                             user='root',
+                                             password='0218S')
+        if connection.is_connected():
+            print("Connected to MySQL database successfully!")
+            return connection
+    except Error as e:
+        print(f"Error while connecting to MySQL: {e}")
+        return None
+
+def insert_user(cursor, connection):
+    """Insert a new user into the database."""
+    try:
+        id_val = input("Enter ID: ")
+        name = input("Enter Name: ")
+        city = input("Enter City: ")
+        age = input("Enter Age: ")
+        
+        query = "INSERT INTO user (id, name, city, age) VALUES (%s, %s, %s, %s)"
+        values = (id_val, name, city, age)
+        
+        cursor.execute(query, values)
+        connection.commit()
+        print(f"User {name} added successfully.")
+    except Error as e:
+        print(f"Error while inserting data: {e}")
+
+def delete_user(cursor, connection):
+    """Delete a user from the database."""
+    try:
+        id_val = input("Enter the ID of the user to delete: ")
+        query = "DELETE FROM user WHERE id = %s"
+        
+        cursor.execute(query, (id_val,))
+        connection.commit()
+        
+        if cursor.rowcount > 0:
+            print(f"User with ID {id_val} deleted successfully.")
+        else:
+            print(f"No user found with ID {id_val}.")
+    except Error as e:
+        print(f"Error while deleting data: {e}")
+
+def update_user(cursor, connection):
+    """Update an existing user in the database."""
+    try:
+        id_val = input("Enter the ID of the user to update: ")
+        name = input("Enter new Name: ")
+        city = input("Enter new City: ")
+        age = input("Enter new Age: ")
+        
+        query = "UPDATE user SET name = %s, city = %s, age = %s WHERE id = %s"
+        values = (name, city, age, id_val)
+        
+        cursor.execute(query, values)
+        connection.commit()
+        
+        if cursor.rowcount > 0:
+            print(f"User with ID {id_val} updated successfully.")
+        else:
+            print(f"No user found with ID {id_val}.")
+    except Error as e:
+        print(f"Error while updating data: {e}")
+
+def select_user(cursor):
+    """Select all users from the database."""
+    try:
+        cursor.execute("SELECT * FROM user")
+        records = cursor.fetchall()
+        
+        print("User data:")
+        for row in records:
+            print(f"ID: {row[0]}, Name: {row[1]}, City: {row[2]}, Age: {row[3]}")
+    except Error as e:
+        print(f"Error while selecting data: {e}")
+
+def show_menu():
+    """Display the main menu."""
+    print("\nMenu:")
+    print("1. Insert User")
+    print("2. Delete User")
+    print("3. Update User")
+    print("4. Select All Users")
+    print("5. Exit")
+
+def main():
+    connection = create_connection()
+    if not connection:
+        return
+        
+    cursor = connection.cursor()
+    
+    try:
+        while True:
+            show_menu()
+            choice = input("Enter your choice (1/2/3/4/5): ")
+            
+            if choice == '1':
+                insert_user(cursor, connection)
+            elif choice == '2':
+                delete_user(cursor, connection)
+            elif choice == '3':
+                update_user(cursor, connection)
+            elif choice == '4':
+                select_user(cursor)
+            elif choice == '5':
+                print("Exiting program...")
+                break
+            else:
+                print("Invalid choice, please try again.")
+    except Error as e:
+        print(f"Error during operation: {e}")
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("MySQL connection is closed")
+
+if __name__ == "__main__":
+    main()
+
+
+----------------------SQL Setup----------------------------------
+create database RohitDb;
+
+use RohitDb;
+
+create table user(
+    id varchar(30), 
+    name varchar(30), 
+    city varchar(30), 
+    age varchar(30)
+);

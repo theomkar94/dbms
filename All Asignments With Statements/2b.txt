@@ -1,0 +1,134 @@
+-- === Part 1: Table Creation ===
+[cite_start]-- Based on problem description [cite: 3, 4]
+
+CREATE TABLE Patient (
+    pat_id VARCHAR(10) PRIMARY KEY,
+    pat_name VARCHAR(50),
+    DateOfAdmit DATE,
+    age INT,
+    city VARCHAR(50)
+);
+
+CREATE TABLE Doctor (
+    doc_id VARCHAR(10) PRIMARY KEY,
+    doc_name VARCHAR(50),
+    qualification VARCHAR(20),
+    experience INT,
+    dept VARCHAR(50),
+    city VARCHAR(50),
+    salary INT
+);
+
+[cite_start]-- Problem description specifies "use on delete cascade" [cite: 4]
+CREATE TABLE Treats (
+    doc_id VARCHAR(10),
+    pat_id VARCHAR(10),
+    disease VARCHAR(50),
+    PRIMARY KEY (doc_id, pat_id),
+    FOREIGN KEY (doc_id) REFERENCES Doctor(doc_id) ON DELETE CASCADE,
+    FOREIGN KEY (pat_id) REFERENCES Patient(pat_id) ON DELETE CASCADE
+);
+
+-- === Part 2: Query 1 (Insert Records) ===
+[cite_start]-- Data extracted from 'SELECT' results in the PDF [cite: 6, 8, 46]
+
+-- Insert data into Patient table
+INSERT INTO Patient (pat_id, pat_name, DateOfAdmit, age, city) VALUES
+('a10', 'Aryan', '2017-05-11', 20, 'Mumbai'),
+('c12', 'Amit', '2017-07-21', 39, 'Bangalore'),
+('d13', 'Anita', '2017-09-25', 49, 'Pune'),
+('p10', 'Sandesh', '2016-07-21', 28, 'Pune'),
+('x15', 'Suyash', '2017-04-17', 29, 'Delhi');
+
+-- Insert data into Doctor table
+INSERT INTO Doctor (doc_id, doc_name, qualification, experience, dept, city, salary) VALUES
+('e1', 'Suhas', 'MD', 10, 'Dental', 'Pune', 70000),
+('r5', 'Yogesh', 'MD', 8, 'Dental', 'Delhi', 40000),
+('s5', 'Mangesh', 'MBBS', 25, 'Cardiology', 'Bangalore', 100000),
+('w8', 'Komal', 'MBBS', 25, 'Chemothera', 'Kolkata', 45000),
+('y3', 'Shubham', 'MBBS', 10, 'Cardiology', 'Mumabi', 60000);
+
+-- Insert data into Treats table
+INSERT INTO Treats (doc_id, pat_id, disease) VALUES
+('w8', 'p10', 'Cancer'),
+('w8', 'c12', 'Cancer'),
+('e1', 'd13', 'Toothache'),
+('s5', 'x15', 'Heart Attack'),
+('r5', 'a10', 'Cavities');
+
+
+-- === Part 3: Assignment Queries (Queries 2-20) ===
+
+[cite_start]-- 2. Display all the patient names between age group 18 to 50. [cite: 68]
+select pat_name from Patient where age between 18 and 50;
+
+[cite_start]-- 3. Display the list of all doctors who are MD. [cite: 78]
+select doc_name from Doctor where qualification = "MD";
+
+[cite_start]-- 4. Display the list of all doctors whose experience > 20 years. [cite: 85]
+select doc_name from Doctor where experience > 20;
+
+[cite_start]-- 5. Display patient names suffering from cancer. [cite: 93, 94]
+select pat_name from Patient, Treats where Treats.disease = "Cancer" and Treats.pat_id = Patient.pat_id;
+
+[cite_start]-- 6. Display the patient name & doctor name who is treating the cancer patient. [cite: 102, 103]
+select pat_name, doc_name from Patient as p, Doctor as d, Treats as t 
+where disease = "Cancer" and d.doc_id = t.doc_id and p.pat_id = t.pat_id;
+
+-- 7. Display the patient names whose name starts with letter 'a', end with 'a', having a name having exactly 5 letters.
+[cite_start]-- Starts with 'a' [cite: 114]
+select pat_name from Patient where pat_name like "a%";
+[cite_start]-- Ends with 'a' [cite: 122]
+select pat_name from Patient where pat_name like "%a";
+[cite_start]-- Exactly 5 letters [cite: 130] (Corrected from " " to "_____")
+select pat_name from Patient where pat_name like "_____";
+
+[cite_start]-- 8. Remove all the records of patient with patient_id=p10. [cite: 138]
+delete from Patient where pat_id = "p10";
+
+[cite_start]-- 9. Remove all the records of doctor Suhas. [cite: 181] (Implied command)
+delete from Doctor where doc_name = "Suhas";
+
+[cite_start]-- 10. Change the qualification of doctor Shubham from MBBS to MD. [cite: 230]
+update Doctor set qualification = "MD" where doc_name = "Shubham";
+
+[cite_start]-- 11. Give 5% salary rates to the dentist and 10% raise to cardiologist (in single query). [cite: 267]
+-- (Corrected syntax for CASE statement)
+update Doctor set salary = 
+  case 
+    when dept = "Dental" then salary + salary * (0.05)
+    when dept = "Cardiology" then salary + salary * (0.1)
+    else salary
+  end;
+
+[cite_start]-- 12. Display dept wise total salary of doctors. [cite: 304]
+select dept, sum(salary) from Doctor group by dept;
+
+[cite_start]-- 13. Find the dept that have the highest avg salary. [cite: 318]
+select dept, avg(salary) from Doctor group by dept 
+having avg(salary) >= all(select avg(salary) from Doctor group by dept);
+
+[cite_start]-- 14. Find the avg salary of the doctors in dentist dept. [cite: 327]
+select avg(salary) from Doctor where dept = "Dental";
+
+[cite_start]-- 15. Find the dept where avg salary... is more than 50,000. [cite: 336]
+select dept from Doctor group by dept having avg(salary) > 50000;
+
+[cite_start]-- 16. Find how many doctors work in hospital. [cite: 344]
+select count(*) from Doctor;
+
+[cite_start]-- 17. Find out how many doctors actually treated a patient. [cite: 350]
+select count(distinct doc_id) from Treats;
+
+[cite_start]-- 18. List the cities in which either doctor or patient lives. [cite: 358]
+select city from Doctor 
+union 
+select city from Patient;
+
+[cite_start]-- 19. List the cities in which both the patient & the doctor lives. [cite: 370]
+-- (Added DISTINCT to show unique cities)
+select distinct d.city from Doctor as d, Patient as p where d.city = p.city;
+
+[cite_start]-- 20. Find out the doctors who have not treated any patient. [cite: 378]
+select doc_name, doc_id from Doctor 
+where doc_id not in (select distinct doc_id from Treats);

@@ -1,0 +1,217 @@
+// === 1. Setup and Insert Data ===
+//
+use AssignB2
+
+//
+// (Corrected and formatted from the PDF)
+db.orders.insertMany([
+    {
+        "Order id": 1,
+        "Cust id": "A1",
+        "Cust name": "Rohit",
+        "Phone_no": [9890151243, 8806048721],
+        "Email_id": "rohit@gmail.com",
+        "Item_name": "Laptop",
+        "DtOfOrder": ISODate("2022-10-12T00:00:00Z"),
+        "Qty": 1,
+        "Amt": 90000,
+        "Status": "D"
+    },
+    {
+        "Order id": 2,
+        "Cust id": "A2",
+        "Cust name": "Aryan",
+        "Phone_no": [9876543210],
+        "Email_id": "aryan@gmail.com",
+        "Item_name": "Mobile",
+        "DtOfOrder": ISODate("2022-11-15T00:00:00Z"),
+        "Qty": 1,
+        "Amt": 50000,
+        "Status": "P"
+    },
+    {
+        "Order id": 3,
+        "Cust id": "A3",
+        "Cust name": "Isha",
+        "Phone_no": [9812345678, 9823456789],
+        "Email_id": "isha@gmail.com",
+        "Item_name": "Tablet",
+        "DtOfOrder": ISODate("2022-12-01T00:00:00Z"),
+        "Qty": 1,
+        "Amt": 30000,
+        "Status": "D"
+    },
+    {
+        "Order id": 4,
+        "Cust id": "A4",
+        "Cust name": "Aditya",
+        "Phone_no": [9865432109],
+        "Email_id": null,
+        "Item_name": "Headphones",
+        "DtOfOrder": ISODate("2023-01-20T00:00:00Z"),
+        "Qty": 2,
+        "Amt": 4000,
+        "Status": "P"
+    },
+    {
+        "Order id": 5,
+        "Cust id": "A5",
+        "Cust name": "Swapnil",
+        "Phone_no": [9898765432, 9887654321],
+        "Email_id": "swapnil@gmail.com",
+        "Item_name": "Monitor",
+        "DtOfOrder": ISODate("2023-02-14T00:00:00Z"),
+        "Qty": 1,
+        "Amt": 15000,
+        "Status": "D"
+    },
+    {
+        "Order id": 6,
+        "Cust id": "A6",
+        "Cust name": "Mugdha",
+        "Phone_no": [9812365478],
+        "Email_id": null,
+        "Item_name": "Keyboard",
+        "DtOfOrder": ISODate("2023-03-05T00:00:00Z"),
+        "Qty": 3,
+        "Amt": 12000,
+        "Status": "P"
+    }
+]);
+
+// === 2. Indexing ===
+//
+// Create a simple index on cust_id and Item_name
+db.orders.createIndex({ "Cust id": 1 });
+db.orders.createIndex({ "Item_name": 1 });
+
+//
+// Try to make a duplicate entry (this will succeed as index is not unique)
+db.orders.insertOne({
+    "Order id": 7,
+    "Cust id": "A1",
+    "Cust name": "Rohit",
+    "Phone_no": [9890151243],
+    "Email_id": "rohit2@gmail.com",
+    "Item_name": "Laptop",
+    "DtOfOrder": ISODate("2023-05-01T00:00:00Z"),
+    "Qty": 1,
+    "Amt": 90000,
+    "Status": "P"
+});
+
+//
+// Create unique index on the order_id key
+db.orders.createIndex({ "Order id": 1 }, { unique: true });
+
+//
+// Try to make duplicate entry (this will fail)
+db.orders.insertOne({
+    "Order id": 1,
+    "Cust id": "A7",
+    "Cust name": "Nikhil",
+    "Phone_no": [9899999999],
+    "Email_id": "nikhil@gmail.com",
+    "Item_name": "Mouse",
+    "DtOfOrder": ISODate("2023-06-10T00:00:00Z"),
+    "Qty": 2,
+    "Amt": 2000,
+    "Status": "D"
+});
+// MongoServerError: E11000 duplicate key error collection...
+
+//
+// Create a multikey index on phone_no
+db.orders.createIndex({ "Phone_no": 1 });
+
+//
+// Find the customers with 2 phone nos
+db.orders.find({ "Phone_no": { $size: 2 } }).pretty();
+
+//
+// Create a sparse index on email_id key
+// Before Creating Index:
+db.orders.find( {"Email_id": { $exists: true } }).explain("executionStats");
+
+//
+// Create the sparse index
+db.orders.createIndex({ "Email_id": 1 }, { sparse: true });
+
+//
+// After Creating Index:
+db.orders.find( {"Email_id": { $exists: true } }).explain("executionStats");
+
+//
+// Display all indexes created
+db.orders.getIndexes();
+
+//
+// Show the size of indexes
+db.orders.totalIndexSize();
+
+//
+// Delete all indexes (except _id)
+db.orders.dropIndexes();
+
+// === 3. Aggregation and Queries ===
+//
+// A) Find Total no of orders received so far
+db.orders.countDocuments()
+
+//
+// B) how many orders are pending
+db.orders.countDocuments({"Status":"P"})
+
+//
+// Display all customer names of orders collection with no repetition
+db.orders.distinct("Cust name");
+
+//
+// Show results and details of sorting documents based on amount
+db.orders.find().sort({"Amt":1}).pretty();
+
+//
+// Show how many orders are placed by each customer
+db.orders.aggregate([
+    {$group: {_id: "$Cust id", totalOrders: {$sum: 1}}}
+]).pretty();
+
+//
+// Display all customer ids and their total pending order amount in descending order
+db.orders.aggregate([
+    {$match: { "Status": "P" } }, 
+    { $group: {_id: "$Cust id", totalAmount: { $sum: "$Amt" } } }, 
+    {$sort: {totalAmount: -1}}
+]);
+
+//
+// Display all customer ids in ascending order with total order amount which have been delivered
+db.orders.aggregate([
+    {$match: {"Status":"D"}}, 
+    {$group: {_id:"$Cust id", totalDeliveredAmount: {$sum:"$Amt"}}},
+    {$sort: {_id:1}}
+]).pretty();
+
+//
+// Show top three Selling Items from orders collection
+db.orders.aggregate([
+    {$group: {_id:"$Item_name", totalSold: {$sum:"$Qty"}}}, 
+    {$sort: {totalSold:-1}}, 
+    {$limit:3}
+]).pretty();
+
+//
+// Find the date on which maximum orders are received
+db.orders.aggregate([
+    {$group: {_id:"$DtOfOrder", totalOrders: {$sum:1}}},
+    {$sort: {totalOrders:-1}},
+    {$limit:1}
+]).pretty();
+
+//
+// Find which customer has placed maximum orders
+db.orders.aggregate([
+    {$group: {_id:"$Cust id", totalOrders: {$sum:1}}}, 
+    {$sort: {totalOrders:-1}}, 
+    {$limit:1}
+]).pretty();

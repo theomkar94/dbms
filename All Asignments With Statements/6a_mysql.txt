@@ -1,0 +1,111 @@
+-- === Part 1: Anonymous Block with Implicit Cursor ===
+
+-- 1. Create the student table
+CREATE TABLE student(
+    roll_no int,
+    name varchar(20), 
+    marks int
+);
+-- 2. Insert initial data
+INSERT INTO student VALUES(1, 'abc', 39);
+INSERT INTO student VALUES(2, 'pqr', 35);
+INSERT INTO student VALUES(3, 'xyz', 41);
+INSERT INTO student VALUES(4, 'cde', 37);
+INSERT INTO student VALUES(5, 'lmo', 46);
+-- 3. Show initial data
+SELECT * FROM student;
+
+-- 4. First run of the UPDATE (updates 3 records)
+-- In MySQL, we just run the statement, then check ROW_COUNT()
+UPDATE student SET marks = 40 WHERE marks BETWEEN 35 AND 39;
+SELECT IF(ROW_COUNT() = 0, 
+    'No records were updated', 
+    CONCAT('Total records updated:', ROW_COUNT())
+) AS update_status;
+
+-- 5. Show data after the first update
+SELECT * FROM student;
+
+-- 6. Second run of the UPDATE (updates 0 records)
+UPDATE student SET marks = 40 WHERE marks BETWEEN 35 AND 39;
+SELECT IF(ROW_COUNT() = 0, 
+    'No records were updated', 
+    CONCAT('Total records updated:', ROW_COUNT())
+) AS update_status;
+
+-- 7. Third run of the UPDATE (updates 4 records)
+UPDATE student SET marks = 45 WHERE marks BETWEEN 35 AND 44;
+SELECT IF(ROW_COUNT() = 0, 
+    'No records were updated', 
+    CONCAT('Total records updated:', ROW_COUNT())
+) AS update_status;
+
+-- 8. Show final data for Part 1
+SELECT * FROM student;
+
+-- === Part 2: Explicit & Parameterized Cursors ===
+
+-- 1. Create the newstudent table
+CREATE TABLE newstudent(
+    roll_no int,
+    name varchar(20), 
+    marks int
+);
+-- 2. Insert initial data into newstudent
+INSERT INTO newstudent VALUES(1, 'abc', 45);
+INSERT INTO newstudent VALUES(3, 'xyz', 45);
+INSERT INTO newstudent VALUES (7, 'xyzr', 95);
+INSERT INTO newstudent VALUES (8, 'pqrs', 65);
+
+-- 3. PL/SQL block converted to a MySQL Stored Procedure
+DELIMITER $
+DROP PROCEDURE IF EXISTS proc_Copy_Unique_Students $
+CREATE PROCEDURE proc_Copy_Unique_Students()
+BEGIN
+    -- Cursor variables
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE s_roll int;
+    DECLARE s_name varchar(20);
+    DECLARE s_marks int;
+    
+    -- Variable to check for existence
+    DECLARE record_exists INT DEFAULT 0;
+    
+    -- Explicit cursor for the source table
+    DECLARE cur_s CURSOR FOR SELECT roll_no, name, marks FROM student;
+    
+    -- Declare 'not found' handler
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN cur_s;
+    
+    read_loop: LOOP
+        FETCH cur_s INTO s_roll, s_name, s_marks;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        
+        -- This replaces the Oracle parameterized cursor check
+        SELECT COUNT(*) INTO record_exists 
+        FROM newstudent 
+        WHERE roll_no = s_roll;
+        
+        -- If count is 0, the record is not found, so insert it.
+        IF record_exists = 0 THEN
+            INSERT INTO newstudent VALUES(s_roll, s_name, s_marks);
+        END IF;
+        
+        -- Reset count for next loop
+        SET record_exists = 0;
+        
+    END LOOP;
+    
+    CLOSE cur_s;
+END $
+DELIMITER ;
+
+-- === Call the procedure to perform the copy ===
+CALL proc_Copy_Unique_Students();
+
+-- 4. Show final data in newstudent table
+SELECT * FROM newstudent;

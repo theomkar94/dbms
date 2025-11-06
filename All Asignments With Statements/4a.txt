@@ -1,0 +1,71 @@
+-- 1. Create tables
+CREATE TABLE borrower_t7(
+    roll_no INT,
+    name VARCHAR(20),
+    date_of_i DATE, 
+    name_of_book VARCHAR(20), 
+    status VARCHAR(10)
+); [cite: 58]
+
+CREATE TABLE fine_t7(
+    roll_no INT,
+    date_of_r DATE,
+    amt INT
+); [cite: 60]
+
+-- 2. Insert data
+INSERT INTO borrower_t7 VALUES(1, 'harsh', '12-06-2017', 'harry potter', 'i'); [cite: 62]
+INSERT INTO borrower_t7 VALUES (2, 'sandesh', '15-06-2017', 'iceage', 'r'); [cite: 64]
+INSERT INTO borrower_t7 VALUES (3, 'Rahul', '25-07-2017', 'pokemon', 'i'); [cite: 77]
+INSERT INTO borrower_t7 VALUES (4, 'sarvesh', '20-04-2017', 'duel', 'r'); [cite: 79]
+INSERT INTO borrower_t7 VALUES (5, 'ishwari', '22-05-2017', 'hindikatha', 'i'); [cite: 81]
+
+-- 3. Enable output for dbms_output.put_line
+SET SERVEROUTPUT ON;
+
+-- 4. PL/SQL block to process a return and calculate fine
+-- This block will prompt you for a roll number and book name
+DECLARE
+    roll int := &roll_number; 
+    b_name varchar(20) := '&bookname'; 
+    mdays int := 0; [cite: 88]
+    ndays date; [cite: 89]
+    fine_amt int := 0; [cite: 90]
+BEGIN
+    -- Get the issue date
+    SELECT date_of_i INTO ndays 
+    FROM borrower_t7 
+    WHERE roll_no = roll AND name_of_book = b_name; 
+    
+    -- Calculate days
+    mdays := SYSDATE - ndays; 
+    
+    -- Calculate fine
+    IF mdays >= 15 AND mdays < 30 THEN 
+        fine_amt := (mdays - 15) * 5; 
+    ELSIF mdays >= 30 THEN [cite: 96]
+        fine_amt := (15 * 5) + (mdays - 30) * 50; 
+    END IF;
+    
+    -- Update status to 'returned'
+    UPDATE borrower_t7 SET status = 'r' 
+    WHERE roll_no = roll AND name_of_book = b_name; 
+    
+    -- Insert fine if applicable
+    IF fine_amt > 0 THEN [cite: 100]
+        INSERT INTO fine_t7 VALUES(roll, SYSDATE, fine_amt); 
+    END IF;
+    
+    dbms_output.put_line('Book returned successfully. Fine amount: ' || fine_amt);
+
+EXCEPTION
+    WHEN no_data_found THEN [cite: 104]
+        dbms_output.put_line('No data found for this roll number and book.');
+    WHEN OTHERS THEN [cite: 106]
+        dbms_output.put_line('An error occurred.'); 
+END;
+/ [cite: 109]
+
+-- 5. Verify the results
+SELECT * FROM borrower_t7; 
+SELECT * FROM fine_t7;
